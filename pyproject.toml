@@ -1,0 +1,161 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "production-rag"
+version = "1.0.0"
+description = "Production-oriented Retrieval-Augmented Generation system with hybrid retrieval, reranking, evaluation, observability and cost tracking."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "Production RAG Team" }]
+keywords = ["rag", "retrieval", "llm", "fastapi", "pgvector", "hybrid-search", "evaluation"]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Framework :: FastAPI",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "License :: OSI Approved :: MIT License",
+]
+
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+    "sqlalchemy>=2.0",
+    "asyncpg>=0.29",
+    "pgvector>=0.3",
+    "httpx>=0.27",
+    "rank-bm25>=0.2.2",
+    "tenacity>=8.2",
+    "structlog>=24.1",
+    "numpy>=1.26",
+    "python-multipart>=0.0.9",
+    "pypdf>=4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5.0",
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "bandit>=1.7",
+    "types-requests",
+]
+benchmark = [
+    "rich>=13.7",
+]
+
+[project.urls]
+Documentation = "https://example.com/production-rag"
+Source = "https://example.com/production-rag"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
+# ----------------------------------------------------------------------------
+# Ruff
+# ----------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["app", "tests", "benchmarks"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "B",        # bugbear
+    "UP",       # pyupgrade
+    "SIM",      # simplify
+    "C4",       # comprehensions
+    "N",        # pep8 naming
+    "RUF",      # ruff-specific
+]
+ignore = [
+    "E501",     # line-too-long (handled by formatter)
+    "B008",     # function-call-in-default-argument (FastAPI Depends)
+    "B904",     # raise-with-from (we use it where useful)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "N802", "N803"]
+"app/**/__init__.py" = ["F401"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+# ----------------------------------------------------------------------------
+# mypy
+# ----------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.12"
+strict = false
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+ignore_missing_imports = true
+exclude = ["^build/", "^dist/"]
+
+# ----------------------------------------------------------------------------
+# pytest
+# ----------------------------------------------------------------------------
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --tb=short"
+asyncio_mode = "auto"
+markers = [
+    "unit: pure unit tests with no external dependencies",
+    "integration: requires external infrastructure (PostgreSQL, real LLM, etc.)",
+    "api: tests against the FastAPI application",
+    "evaluation: evaluation pipeline tests",
+    "benchmark: performance benchmarks (slow, opt-in)",
+    "slow: long-running tests",
+]
+filterwarnings = [
+    "error::DeprecationWarning:app.*",
+]
+
+# ----------------------------------------------------------------------------
+# Coverage
+# ----------------------------------------------------------------------------
+[tool.coverage.run]
+source = ["app"]
+branch = true
+omit = [
+    "app/__init__.py",
+    "*/tests/*",
+    "*/benchmarks/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]
+show_missing = true
+skip_covered = false
+
+# ----------------------------------------------------------------------------
+# Bandit
+# ----------------------------------------------------------------------------
+[tool.bandit]
+exclude_dirs = ["tests", "benchmarks", "scripts"]
+skips = [
+    "B101",  # assert_used (tests are fine)
+    "B104",  # hardcoded_bind_all_interfaces (FastAPI default; container expectation)
+    "B108",  # hardcoded_tmp_directory (upload sandbox, controlled)
+    "B112",  # try_except_continue (per-page PDF resilience, intentional)
+    "B608",  # hardcoded_sql_expressions (pgvector SQL interpolates only trusted dim; user input is parameterised)
+]

@@ -1,0 +1,60 @@
+# Production RAG — Docker Compose
+# Brings up:
+#   - PostgreSQL 16 with pgvector
+#   - The FastAPI RAG service (defaults to mock providers; switch to openai in .env)
+#
+# Usage:
+#   cp .env.example .env
+#   docker compose up -d
+#   curl http://localhost:8000/health
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: rag
+      POSTGRES_PASSWORD: rag
+      POSTGRES_DB: rag
+    ports:
+      - "5432:5432"
+    volumes:
+      - rag_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rag -d rag"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  rag:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: production-rag:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://rag:rag@postgres:5432/rag
+      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.openai.com/v1}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-mock}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION:-1536}
+      EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:-https://api.openai.com/v1}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      TOP_K: ${TOP_K:-10}
+      RERANK_TOP_K: ${RERANK_TOP_K:-5}
+      HYBRID_ALPHA: ${HYBRID_ALPHA:-0.5}
+      MAX_CONTEXT_TOKENS: ${MAX_CONTEXT_TOKENS:-3500}
+      CACHE_ENABLED: ${CACHE_ENABLED:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_JSON: ${LOG_JSON:-true}
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+volumes:
+  rag_pgdata:

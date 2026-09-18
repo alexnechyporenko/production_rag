@@ -1,0 +1,45 @@
+{
+  "cost": {
+    "pricing_known": false,
+    "total_estimated_usd": 0.0
+  },
+  "ingestion": {
+    "chunks_per_s": 5155.0,
+    "docs_per_s": 5155.0,
+    "total_s": 0.0035
+  },
+  "latencies_ms": {
+    "end_to_end": {
+      "mean": 0.757,
+      "p50": 0.7,
+      "p95": 0.901
+    },
+    "generation": {
+      "mean": 0.086,
+      "p50": 0.083,
+      "p95": 0.1
+    },
+    "rerank": {
+      "mean": 0.075,
+      "p50": 0.073,
+      "p95": 0.091
+    },
+    "retrieval": {
+      "mean": 0.374,
+      "p50": 0.344,
+      "p95": 0.432
+    }
+  },
+  "n_chunks": 18,
+  "n_documents": 18,
+  "n_queries": 51,
+  "name": "builtin-mock-full",
+  "repeat": 1,
+  "timestamp": "2026-09-07T18:34:29.109009+00:00",
+  "token_usage": {
+    "input_tokens_mean": 604.69,
+    "input_tokens_total": 30839,
+    "output_tokens_mean": 261.14,
+    "output_tokens_total": 13318
+  }
+}
